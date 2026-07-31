@@ -1,0 +1,153 @@
+import sqlite3
+
+class LibraryManagementSystem:
+    def __init__(self, db_name="library.db"):
+        # Connect to SQLite (creates the file if it doesn't exist)
+        self.conn = sqlite3.connect(db_name)
+        self.cursor = self.conn.cursor()
+        self.setup_tables()
+
+    def setup_tables(self):
+        """Creates the Books and Customer tables if they don't already exist."""
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Books (
+                Book_id INTEGER PRIMARY KEY,
+                book_name TEXT NOT NULL,
+                author TEXT,
+                tot_copies INTEGER NOT NULL,
+                remaining_copies INTEGER NOT NULL
+            )
+        ''')
+        
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Customer (
+                cust_id INTEGER PRIMARY KEY,
+                cust_name TEXT NOT NULL,
+                issued_books INTEGER DEFAULT 0,
+                Fees_paid REAL DEFAULT 0.0
+            )
+        ''')
+        self.conn.commit()
+
+    def add_book(self, book_id, name, author, copies):
+        """Adds a new book to the library."""
+        try:
+            self.cursor.execute('''
+                INSERT INTO Books (Book_id, book_name, author, tot_copies, remaining_copies)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (book_id, name, author, copies, copies))
+            self.conn.commit()
+            print(f"Success: Book '{name}' added successfully!")
+        except sqlite3.IntegrityError:
+            print(f"Error: Book ID {book_id} already exists.")
+
+    def add_customer(self, cust_id, name, fees_paid=0.0):
+        """Registers a new customer."""
+        try:
+            self.cursor.execute('''
+                INSERT INTO Customer (cust_id, cust_name, issued_books, Fees_paid)
+                VALUES (?, ?, ?, ?)
+            ''', (cust_id, name, 0, fees_paid))
+            self.conn.commit()
+            print(f"Success: Customer '{name}' registered successfully!")
+        except sqlite3.IntegrityError:
+            print(f"Error: Customer ID {cust_id} already exists.")
+
+    def issue_book(self, book_id, cust_id):
+        """Issues a book to a customer if copies are available."""
+        # Check book availability
+        self.cursor.execute("SELECT remaining_copies, book_name FROM Books WHERE Book_id = ?", (book_id,))
+        book = self.cursor.fetchone()
+        
+        # Check customer existence
+        self.cursor.execute("SELECT cust_name, issued_books FROM Customer WHERE cust_id = ?", (cust_id,))
+        customer = self.cursor.fetchone()
+
+        if not book:
+            print("Error: Book not found.")
+            return
+        if not customer:
+            print("Error: Customer not found.")
+            return
+
+        remaining_copies, book_name = book
+        cust_name, issued_books = customer
+
+        if remaining_copies > 0:
+            # Deduct a copy from Books
+            self.cursor.execute("UPDATE Books SET remaining_copies = remaining_copies - 1 WHERE Book_id = ?", (book_id,))
+            # Add a book to Customer's issued count
+            self.cursor.execute("UPDATE Customer SET issued_books = issued_books + 1 WHERE cust_id = ?", (cust_id,))
+            self.conn.commit()
+            print(f"Success: '{book_name}' has been issued to {cust_name}.")
+        else:
+            print(f"Sorry, '{book_name}' is currently out of stock.")
+
+    def return_book(self, book_id, cust_id):
+        """Processes a book return."""
+        self.cursor.execute("SELECT book_name FROM Books WHERE Book_id = ?", (book_id,))
+        book = self.cursor.fetchone()
+        
+        self.cursor.execute("SELECT cust_name, issued_books FROM Customer WHERE cust_id = ?", (cust_id,))
+        customer = self.cursor.fetchone()
+
+        if book and customer:
+            if customer[1] > 0:
+                # Add copy back to Books
+                self.cursor.execute("UPDATE Books SET remaining_copies = remaining_copies + 1 WHERE Book_id = ?", (book_id,))
+                # Remove a book from Customer's issued count
+                self.cursor.execute("UPDATE Customer SET issued_books = issued_books - 1 WHERE cust_id = ?", (cust_id,))
+                self.conn.commit()
+                print(f"Success: '{book[0]}' has been returned by {customer[0]}.")
+            else:
+                print(f"Error: {customer[0]} does not have any books to return.")
+        else:
+            print("Error: Invalid Book ID or Customer ID.")
+
+    def display_books(self):
+        """Displays all books in the library."""
+        self.cursor.execute("SELECT * FROM Books")
+        books = self.cursor.fetchall()
+        print("\n--- Library Books ---")
+        print(f"{'ID':<5} | {'Name':<25} | {'Author':<20} | {'Total':<5} | {'Remaining':<9}")
+        print("-" * 75)
+        for b in books:
+            print(f"{b[0]:<5} | {b[1]:<25} | {b[2]:<20} | {b[3]:<5} | {b[4]:<9}")
+        print("-" * 75)
+
+    def close_connection(self):
+        self.conn.close()
+
+# ==========================================
+# Example Usage
+# ==========================================
+if __name__ == "__main__":
+    # Initialize the system
+    lib = LibraryManagementSystem()
+
+    # 1. Add some books
+    lib.add_book(101, "The Great Gatsby", "F. Scott Fitzgerald", 5)
+    lib.add_book(102, "1984", "George Orwell", 3)
+    lib.add_book(103, "To Kill a Mockingbird", "Harper Lee", 4)
+
+    # 2. Add some customers
+    lib.add_customer(1, "Alice Smith", 50.00)
+    lib.add_customer(2, "Bob Johnson", 25.00)
+
+    # 3. Issue books
+    print("\n--- Issuing Books ---")
+    lib.issue_book(101, 1)  # Alice borrows The Great Gatsby
+    lib.issue_book(102, 1)  # Alice borrows 1984
+    
+    # 4. Display status after issuing
+    lib.display_books()
+
+    # 5. Return a book
+    print("\n--- Returning Books ---")
+    lib.return_book(101, 1) # Alice returns The Great Gatsby
+    
+    # 6. Display status after returning
+    lib.display_books()
+
+    # Close the database connection when done
+    lib.close_connection()
