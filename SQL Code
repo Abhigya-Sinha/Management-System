@@ -8,7 +8,6 @@ CREATE TABLE Books (
 );
 
 -- Create the Customer table
--- Note: 'issued_books' is treated as an integer tracking the number of books currently held by the customer.
 CREATE TABLE Customer (
     cust_id INT PRIMARY KEY,
     cust_name VARCHAR(255) NOT NULL,
