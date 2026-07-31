@@ -2,7 +2,7 @@ import sqlite3
 
 class LibraryManagementSystem:
     def __init__(self, db_name="library.db"):
-        # Connect to SQLite (creates the file if it doesn't exist)
+        # Connect to SQLite 
         self.conn = sqlite3.connect(db_name)
         self.cursor = self.conn.cursor()
         self.setup_tables()
@@ -118,28 +118,26 @@ class LibraryManagementSystem:
     def close_connection(self):
         self.conn.close()
 
-# ==========================================
 # Example Usage
-# ==========================================
 if __name__ == "__main__":
     # Initialize the system
     lib = LibraryManagementSystem()
 
-    # 1. Add some books
+    #Add some books
     lib.add_book(101, "The Great Gatsby", "F. Scott Fitzgerald", 5)
     lib.add_book(102, "1984", "George Orwell", 3)
     lib.add_book(103, "To Kill a Mockingbird", "Harper Lee", 4)
 
-    # 2. Add some customers
+    # Add some customers
     lib.add_customer(1, "Alice Smith", 50.00)
     lib.add_customer(2, "Bob Johnson", 25.00)
 
-    # 3. Issue books
+    # Issue books
     print("\n--- Issuing Books ---")
     lib.issue_book(101, 1)  # Alice borrows The Great Gatsby
     lib.issue_book(102, 1)  # Alice borrows 1984
     
-    # 4. Display status after issuing
+    #Display status after issuing
     lib.display_books()
 
     # 5. Return a book
