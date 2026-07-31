@@ -1,5 +1,4 @@
 import sqlite3
-
 class LibraryManagementSystem:
     def __init__(self, db_name="library.db"):
         # Connect to SQLite 
@@ -143,7 +142,9 @@ if __name__ == "__main__":
     # 5. Return a book
     print("\n--- Returning Books ---")
     lib.return_book(101, 1) # Alice returns The Great Gatsby
-    
+
+
+
     # 6. Display status after returning
     lib.display_books()
 
