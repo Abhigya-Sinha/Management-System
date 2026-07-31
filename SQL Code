@@ -1,0 +1,17 @@
+-- Create the Books table
+CREATE TABLE Books (
+    Book_id INT PRIMARY KEY,
+    book_name VARCHAR(255) NOT NULL,
+    author VARCHAR(255),
+    tot_copies INT NOT NULL,
+    remaining_copies INT NOT NULL
+);
+
+-- Create the Customer table
+-- Note: 'issued_books' is treated as an integer tracking the number of books currently held by the customer.
+CREATE TABLE Customer (
+    cust_id INT PRIMARY KEY,
+    cust_name VARCHAR(255) NOT NULL,
+    issued_books INT DEFAULT 0,
+    Fees_paid DECIMAL(10, 2) DEFAULT 0.00
+);
